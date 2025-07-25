@@ -24,8 +24,11 @@ log = logging.getLogger("pdud.drivers")
 
 
 def get_named_entry_point(group, name):
-    import pkg_resources
-    eps = list(pkg_resources.iter_entry_points(group, name))
+    import importlib.metadata
+    eps = [
+        ep for ep in importlib.metadata.entry_points().select(group=group)
+        if ep.name == name
+    ]
     if len(eps) > 1:
         raise Exception('Multiple entry points for {} under {}'.format(group, name))
     if len(eps) == 0:

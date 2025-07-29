@@ -143,8 +143,8 @@ __all__ = [
 ]
 
 log = logging.getLogger("pdud.drivers." + os.path.basename(__file__))
-try:
-    from pdudaemon.drivers.snmp import SNMP
-    __all__.append(SNMP.__name__)
-except ModuleNotFoundError:
-    log.warning("disabling snmp drivers due to missing modules")
+# try:
+#     from pdudaemon.drivers.snmp import SNMP
+#     __all__.append(SNMP.__name__)
+# except ModuleNotFoundError:
+#     log.warning("disabling snmp drivers due to missing modules")

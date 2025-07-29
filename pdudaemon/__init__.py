@@ -82,14 +82,14 @@ def setup_logging(options, settings):
 class PDUDaemon:
     def __init__(self, options, settings):
         # Context
-        self.runners = {}
+        self.runners = {} # type: dict[str, PDURunner]
 
         # Create the runners
         logger.info("Creating the runners")
-        for hostname in settings["pdus"]:
-            config = settings["pdus"][hostname]
+        for pdu_name in settings["pdus"]:
+            config = settings["pdus"][pdu_name]
             retries = config.get("retries", 5)
-            self.runners[hostname] = PDURunner(config, hostname, retries)
+            self.runners[pdu_name] = PDURunner(config, pdu_name, retries)
 
         # Start the listener
         logger.info("Starting the listener")
@@ -137,12 +137,12 @@ async def main_async():
     conflict = parser.add_mutually_exclusive_group()
     conflict.add_argument("--alias", dest="alias", action="store", type=str)
     conflict.add_argument("--hostname", dest="drivehostname", action="store", type=str)
-    drive = parser.add_argument_group("drive")
-    drive.add_argument("--drive", action="store_true", default=False)
-    drive.add_argument("--request", dest="driverequest", action="store", type=str)
-    drive.add_argument("--retries", dest="driveretries", action="store", type=int, default=5)
-    drive.add_argument("--delay", dest="drivedelay", action="store", type=int, default=5)
-    drive.add_argument("--port", dest="driveport", action="store", type=str)
+    # drive = parser.add_argument_group("drive")
+    # drive.add_argument("--drive", action="store_true", default=False)
+    # drive.add_argument("--request", dest="driverequest", action="store", type=str)
+    # drive.add_argument("--retries", dest="driveretries", action="store", type=int, default=5)
+    # drive.add_argument("--delay", dest="drivedelay", action="store", type=int, default=5)
+    # drive.add_argument("--port", dest="driveport", action="store", type=str)
 
     # Parse the command line
     options = parser.parse_args()
@@ -160,34 +160,34 @@ async def main_async():
     # Get handle to the currently running loop
     loop = asyncio.get_running_loop()
 
-    if options.drive:
-        # Driving a PDU directly, dont start any Listeners
+    # if options.drive:
+    #     # Driving a PDU directly, dont start any Listeners
 
-        if options.alias:
-            # Using alias support, get all pdu info from alias
-            alias_settings = settings["aliases"].get(options.alias, False)
-            if not alias_settings:
-                logging.error("Alias requested but not found")
-                sys.exit(1)
-            options.drivehostname = settings["aliases"][options.alias]["hostname"]
-            options.driveport = settings["aliases"][options.alias]["port"]
+    #     if options.alias:
+    #         # Using alias support, get all pdu info from alias
+    #         alias_settings = settings["aliases"].get(options.alias, False)
+    #         if not alias_settings:
+    #             logging.error("Alias requested but not found")
+    #             sys.exit(1)
+    #         options.drivehostname = settings["aliases"][options.alias]["hostname"]
+    #         options.driveport = settings["aliases"][options.alias]["port"]
 
-        # Check that the requested PDU has config
-        config = settings["pdus"].get(options.drivehostname, False)
-        if not config:
-            logging.error("No config section for hostname: {}".format(options.drivehostname))
-            sys.exit(1)
+    #     # Check that the requested PDU has config
+    #     config = settings["pdus"].get(options.drivehostname, False)
+    #     if not config:
+    #         logging.error("No config section for hostname: {}".format(options.drivehostname))
+    #         sys.exit(1)
 
-        runner = PDURunner(config, options.drivehostname, options.driveretries)
-        if options.driverequest == "reboot":
-            result = await runner.do_job_async(options.driveport, "off")
-            await asyncio.sleep(int(options.drivedelay))
-            result = await runner.do_job_async(options.driveport, "on")
-        else:
-            result = await runner.do_job_async(options.driveport, options.driverequest)
-        await runner.shutdown()
-        loop.stop()
-        return result
+    #     runner = PDURunner(config, options.drivehostname, options.driveretries)
+    #     if options.driverequest == "reboot":
+    #         result = await runner.do_job_async(options.driveport, "off")
+    #         await asyncio.sleep(int(options.drivedelay))
+    #         result = await runner.do_job_async(options.driveport, "on")
+    #     else:
+    #         result = await runner.do_job_async(options.driveport, options.driverequest)
+    #     await runner.shutdown()
+    #     loop.stop()
+    #     return result
 
     # Create daemon
     logger.info('PDUDaemon starting up')

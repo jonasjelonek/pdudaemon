@@ -35,10 +35,8 @@ def get_named_entry_point(group, name):
         return None
     return eps[0]
 
-
 class PDUDriver(object):
     connection = None
-    hostname = ""
 
     def __init__(self):
         super(PDUDriver, self).__init__()
@@ -65,29 +63,17 @@ class PDUDriver(object):
         log.debug("%s accepted the request", willing[0])
         return willing[0]
 
-    def handle(self, request, port_number):
-        log.debug("Driving PDU hostname: %s "
-                  "PORT: %s REQUEST: %s",
-                  self.hostname, port_number, request)
-        if request == "on":
-            self.port_on(port_number)
-        elif request == "off":
-            self.port_off(port_number)
-        else:
-            log.debug("Unknown request to handle - oops")
-            raise UnknownCommandException(
-                "Driver doesn't know how to %s " % request
-            )
-        self._cleanup()
+    def port_get(self, port_number: int) -> bool:
+        raise NotImplementedError("Driver does not support port_get")
 
-    def port_on(self, port_number):
-        self.port_interaction("on", port_number)
+    def port_set(self, port_number: int, state: bool):
+        raise NotImplementedError("Driver does not support port_set")
 
-    def port_off(self, port_number):
-        self.port_interaction("off", port_number)
+    def port_action(self, port_number: int, action: str):
+        raise NotImplementedError("Driver does not support port_action")
 
-    def port_interaction(self, command, port_number):
-        pass
+    def port_get_metrics(self, port_number: int) -> dict:
+        raise NotImplementedError("Driver does not support port_get_metrics")
 
     def _bombout(self):
         pass
@@ -96,9 +82,11 @@ class PDUDriver(object):
         pass
 
 
-class UnknownCommandException(Exception):
+class PDUDriverException(Exception):
     pass
 
+class UnknownCommandException(PDUDriverException):
+    pass
 
-class FailedRequestException(Exception):
+class FailedRequestException(PDUDriverException):
     pass

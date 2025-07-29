@@ -31,19 +31,20 @@ import logging
 import os
 from pdudaemon.drivers.driver import PDUDriver
 import requests
+from pickle import POP
 
 log = logging.getLogger("pdud.drivers." + os.path.basename(__file__))
 
 class ShellyGen2(PDUDriver):
-    def __init__(self, hostname, settings):
-        self.hostname = hostname
+    def __init__(self, pdu_name, settings):
+        self.pdu_name = pdu_name
         self.settings = settings
 
         super(ShellyGen2, self).__init__()
 
     def jsonrpc_call(self, method, params):
         r = requests.post(
-            f"http://{self.hostname}/rpc",
+            f"http://{self.settings['hostname']}/rpc",
             json = {
                 "jsonrpc":"2.0",
                 "id": 1,
@@ -61,14 +62,21 @@ class ShellyGen2(PDUDriver):
         })
         return r["output"]
 
-    def port_interaction(self, command, port_number):
-        if command == "get":
-            return self.port_get(port_number)
-
+    def port_set(self, port_number, state: bool):
         self.jsonrpc_call("Switch.Set", {
             "id": int(port_number) - 1,
-            "on": True if command == "on" else False
+            "on": state
         })
+
+    def port_get_metrics(self, port_number):
+        r = self.jsonrpc_call("Switch.GetStatus", {
+            "id": int(port_number) - 1
+        })
+
+        r.pop("id")
+        r.pop("source")
+        r.pop("output")
+        return r
 
     @classmethod
     def accepts(cls, drivername):
